@@ -13,6 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import glob
 
+
 # Define the location of the data, assumes the data will be in a directory of the form:
 # /data_dir/event/*.nc
 data_dir = r"V:\projects\p00659_dec_glo_phase3\00_collection\Precip"
@@ -26,23 +27,21 @@ events = [
 # Define the coordinates for each location to use for the plots.
 # The coordinates are in the form (lat, lon)
 # using the USGS Gage for GLO (29.6756, -94.6661)
-locations = [
-    (29.6756, -94.6661)
-]
+locations = [{
+    'name': 'USGS Gage 08042558',
+    'lat': 29.6756,
+    'lon': -94.6661
+}]
 
-# For each event, read in the data and aggregate the data for each location
-for event in events:
-    # Get the list of files for the event
-    files = glob.glob(f'{data_dir}/{event}/*.nc4')
-    # remove files that dont start with 'AORC_APCP'
-    # files2 = [f for f in files if 'AORC_APCP' in f]
-    # Read in the data
-
-    data = xr.open_mfdataset(files)
-    # Aggregate the data for each location
-    for lat, lon in locations:
-        # Get the data for the location
-        data_loc = data.sel(lat=lat, lon=lon, method='nearest')
+for point in locations:
+    # For each event, read in the data and aggregate the data for each location
+    for event in events:
+        # Get the list of files for the event
+        files = glob.glob(f'{data_dir}/{event}/*.nc4')
+        # Read in the data
+        data = xr.open_mfdataset(files)
+        # Get the data for the point location
+        data_loc = data.sel(latitude=point['lat'], longitude=point['lon'], method='nearest')
         # Calculate the incremental and cumulative precipitation
         data_loc['precip_inc'] = data_loc['precipitationCal'].diff(dim='time', label='lower')
         data_loc['precip_cum'] = data_loc['precipitationCal'].cumsum(dim='time')
@@ -59,3 +58,4 @@ for event in events:
         plt.show()
         # Save the plot
         plt.savefig(f'{event}_{lat}_{lon}.png')
+
